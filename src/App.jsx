@@ -1,59 +1,61 @@
-import { useState, useRef, useEffect } from "react";
-import { bootstrapCameraKit } from "@snap/camera-kit";
-import reactLogo from "./assets/react.svg";
-import viteLogo from "/vite.svg";
+import { useRef, useEffect } from "react";
+import {
+  bootstrapCameraKit,
+  Transform2D,
+  createMediaStreamSource,
+} from "@snap/camera-kit";
 import "./App.css";
 
 function App() {
-  const [count, setCount] = useState(0);
-  const [cameraKit, setCameraKit] = useRef(null);
+  const cameraKitRef = useRef(null);
+  const canvasRef = useRef(null);
+  const sessionRef = useRef(null);
 
   useEffect(() => {
     async function initCameraKit() {
-      const cameraKit = await bootstrapCameraKit({ apiToken: "your-api" });
-      setCameraKit(cameraKit);
+      const cameraKit = await bootstrapCameraKit({
+        apiToken: import.meta.env.VITE_CAMERA_KIT_API_KEY,
+      });
+      cameraKitRef.current = cameraKit;
+
+      const { lenses } = await cameraKit.lensRepository.loadLensGroups([
+        "542c15e5-1f57-450b-b0c6-f3f29df229aa",
+      ]);
+
+      console.log(lenses);
+
+      const session = await cameraKit.createSession({
+        liveRenderTarget: canvasRef.current,
+      });
+
+      sessionRef.current = session;
+      session.events.addEventListener("error", (event) =>
+        console.error(event.detail)
+      );
+      const mediaStream = await navigator.mediaDevices.getUserMedia({
+        video: true,
+      });
+
+      session.setSource(mediaStream);
+      await session.applyLens(lenses[4]);
+      session.play();
     }
-    if (!cameraKit.current) {
+    if (!cameraKitRef.current) {
       initCameraKit();
     }
-  });
+
+    return () => {
+      sessionRef.current &&
+        sessionRef.current.stop &&
+        sessionRef.current.stop();
+    };
+  }, []);
 
   return (
     <>
-      <div>
-        <a
-          href="https://vitejs.dev"
-          target="_blank"
-        >
-          <img
-            src={viteLogo}
-            className="logo"
-            alt="Vite logo"
-          />
-        </a>
-        <a
-          href="https://react.dev"
-          target="_blank"
-        >
-          <img
-            src={reactLogo}
-            className="logo react"
-            alt="React logo"
-          />
-        </a>
+      <div style={{ display: "flex", width: "100vw", height: "100vh" }}>
+        <canvas ref={canvasRef} />
       </div>
-      <h1>Vite + React</h1>
-      <div className="card">
-        <button onClick={() => setCount((count) => count + 1)}>
-          count is {count}
-        </button>
-        <p>
-          Edit <code>src/App.jsx</code> and save to test HMR
-        </p>
-      </div>
-      <p className="read-the-docs">
-        Click on the Vite and React logos to learn more
-      </p>
     </>
   );
 }
