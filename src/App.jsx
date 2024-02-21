@@ -4,22 +4,44 @@ import {
   Transform2D,
   createMediaStreamSource,
 } from "@snap/camera-kit";
+import { Push2Web } from "@snap/push2web";
 import "./App.css";
+
+const LENS_GROUP_ID = "542c15e5-1f57-450b-b0c6-f3f29df229aa";
 
 function App() {
   const cameraKitRef = useRef(null);
   const canvasRef = useRef(null);
   const sessionRef = useRef(null);
+  const push2WebRef = useRef(null);
 
   useEffect(() => {
     async function initCameraKit() {
-      const cameraKit = await bootstrapCameraKit({
-        apiToken: import.meta.env.VITE_CAMERA_KIT_API_KEY,
-      });
+      if (!push2WebRef.current) {
+        const push2web = new Push2Web();
+        push2WebRef.current = push2web;
+
+        push2web.events.addEventListener("error", async (event) => {
+          const { id } = event.detail;
+
+          const newLens = await cameraKitRef.current?.lensRepository.loadLens(
+            id,
+            LENS_GROUP_ID
+          );
+          await session.applyLens(newLens);
+        });
+      }
+
+      const cameraKit = await bootstrapCameraKit(
+        {
+          apiToken: import.meta.env.VITE_CAMERA_KIT_API_KEY,
+        },
+        (container) => container.provides(push2WebRef.current)
+      );
       cameraKitRef.current = cameraKit;
 
       const { lenses } = await cameraKit.lensRepository.loadLensGroups([
-        "542c15e5-1f57-450b-b0c6-f3f29df229aa",
+        LENS_GROUP_ID,
       ]);
 
       console.log(lenses);
@@ -35,9 +57,12 @@ function App() {
       const mediaStream = await navigator.mediaDevices.getUserMedia({
         video: true,
       });
-
-      session.setSource(mediaStream);
-      await session.applyLens(lenses[4]);
+      const source = createMediaStreamSource(mediaStream, {
+        transform: Transform2D.MirrorX,
+        cameraType: "front",
+      });
+      session.setSource(source);
+      await session.applyLens(lenses[8]);
       session.play();
     }
     if (!cameraKitRef.current) {
