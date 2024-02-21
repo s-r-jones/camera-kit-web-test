@@ -7,8 +7,8 @@ import {
 import { Push2Web } from "@snap/push2web";
 import "./App.css";
 
-const LENS_GROUP_ID = import.meta.env.VITE_LENS_GROUP_ID;
-const AUTH_TOKEN = import.meta.env.VITE_CAMERA_KIT_AUTH_ID;
+const LENS_GROUP_ID = "542c15e5-1f57-450b-b0c6-f3f29df229aa";
+const AUTH_TOKEN = "be39b419-c314-4879-906a-7b4b8284f8c0";
 //be39b419-c314-4879-906a-7b4b8284f8c0
 function App() {
   console.log("Auth Token", AUTH_TOKEN);
@@ -21,7 +21,8 @@ function App() {
       const push2Web = new Push2Web();
       const cameraKit = await bootstrapCameraKit(
         {
-          apiToken: import.meta.env.VITE_CAMERA_KIT_API_KEY,
+          apiToken:
+            "eyJhbGciOiJIUzI1NiIsImtpZCI6IkNhbnZhc1MyU0hNQUNQcm9kIiwidHlwIjoiSldUIn0.eyJhdWQiOiJjYW52YXMtY2FudmFzYXBpIiwiaXNzIjoiY2FudmFzLXMyc3Rva2VuIiwibmJmIjoxNzA4NTQ0MTU3LCJzdWIiOiI3YjQwZWM4Ny1hNTk3LTQ0OTMtYjAyZi04YTFkOWVlYTNjZTN-U1RBR0lOR340ZGE0ZmUwYi05OTNmLTRkOGYtYjNiNC0yNjg3NjM2NjkxMzgifQ.BfK9vetSFkfUkL5_ueLB7xJv3S60SRfwIuISh_5F0V8",
         },
         (container) => container.provides(push2Web.extension)
       );
