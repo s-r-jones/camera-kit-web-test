@@ -67,7 +67,7 @@ function App() {
         cameraType: "front",
       });
       session.setSource(source);
-      await session.applyLens(lenses[8]);
+      await session.applyLens(lenses[0]);
       session.play();
     }
 
