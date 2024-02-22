@@ -14,15 +14,15 @@ const AUTH_TOKEN = "be39b419-c314-4879-906a-7b4b8284f8c0";
 //be39b419-c314-4879-906a-7b4b8284f8c0
 export const App = () => {
   console.log("Auth Token", AUTH_TOKEN);
-  const cameraKitRef = useRef<null | CameraKit>(null);
-  const canvasRef = useRef<null | HTMLCanvasElement>(null);
-  const sessionRef = useRef<null | CameraKitSession>(null);
+  const cameraKitRef = useRef<undefined | CameraKit>();
+  const canvasRef = useRef<undefined | HTMLCanvasElement>();
+  const sessionRef = useRef<undefined | CameraKitSession>();
 
-  const mediaStreamRef = useRef<null | MediaStream>(null);
+  const mediaStreamRef = useRef<undefined | MediaStream>();
 
   let isBackFacing = true;
 
-  const updateCamera = () => {
+  const updateCamera = async () => {
     console.log("camera flip");
     isBackFacing = !isBackFacing;
 
@@ -30,6 +30,20 @@ export const App = () => {
       sessionRef.current?.pause();
       mediaStreamRef.current?.getVideoTracks()[0].stop();
     }
+
+    const mediaStream = await navigator.mediaDevices.getUserMedia({
+      video: { facingMode: isBackFacing ? "environment" : "user" },
+    });
+
+    mediaStreamRef.current = mediaStream;
+
+    const source = createMediaStreamSource(mediaStream, {
+      cameraType: isBackFacing ? "back" : "front",
+    });
+
+    await sessionRef.current?.setSource(source);
+    if (!isBackFacing) source.setTransform(Transform2D.MirrorX);
+    sessionRef.current?.play();
   };
 
   useEffect(() => {
@@ -51,14 +65,13 @@ export const App = () => {
       //console.log(lenses);
 
       // use existing canvas
-      let session;
 
-      session = await cameraKit.createSession({
+      const session = await cameraKit.createSession({
         liveRenderTarget: canvasRef.current,
       });
       sessionRef.current = session;
 
-      push2Web.subscribe(AUTH_TOKEN, session, cameraKit.lensRepository);
+      //push2Web.subscribe(AUTH_TOKEN, session, cameraKit.lensRepository);
 
       // PUSH2WEB
       // push2Web.events.addEventListener("error", (event) => {
@@ -89,7 +102,7 @@ export const App = () => {
         transform: Transform2D.MirrorX,
         cameraType: "back",
       });
-      session.setSource(source);
+      await session.setSource(source);
       await session.applyLens(lenses[0]);
       session.play();
     }
@@ -99,11 +112,9 @@ export const App = () => {
     }
 
     return () => {
-      sessionRef.current &&
-        sessionRef.current.stop &&
-        sessionRef.current.stop();
+      sessionRef.current?.pause();
     };
-  }, []);
+  }, [canvasRef]);
 
   return (
     <div style={{ display: "flex", width: "100vw", height: "100vh" }}>
@@ -113,6 +124,8 @@ export const App = () => {
       >
         {isBackFacing ? "switch to front" : "switch to back"}
       </button>
+
+      {/* @ts-ignore */}
       <canvas ref={canvasRef} />
     </div>
   );
