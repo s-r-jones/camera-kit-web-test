@@ -3,6 +3,8 @@ import {
   bootstrapCameraKit,
   Transform2D,
   createMediaStreamSource,
+  CameraKit,
+  CameraKitSession,
 } from "@snap/camera-kit";
 import { Push2Web } from "@snap/push2web";
 import "./App.css";
@@ -10,11 +12,25 @@ import "./App.css";
 const LENS_GROUP_ID = "542c15e5-1f57-450b-b0c6-f3f29df229aa";
 const AUTH_TOKEN = "be39b419-c314-4879-906a-7b4b8284f8c0";
 //be39b419-c314-4879-906a-7b4b8284f8c0
-function App() {
+export const App = () => {
   console.log("Auth Token", AUTH_TOKEN);
-  const cameraKitRef = useRef(null);
-  const canvasRef = useRef(null);
-  const sessionRef = useRef(null);
+  const cameraKitRef = useRef<null | CameraKit>(null);
+  const canvasRef = useRef<null | HTMLCanvasElement>(null);
+  const sessionRef = useRef<null | CameraKitSession>(null);
+
+  const mediaStreamRef = useRef<null | MediaStream>(null);
+
+  let isBackFacing = true;
+
+  const updateCamera = () => {
+    console.log("camera flip");
+    isBackFacing = !isBackFacing;
+
+    if (mediaStreamRef.current) {
+      sessionRef.current?.pause();
+      mediaStreamRef.current?.getVideoTracks()[0].stop();
+    }
+  };
 
   useEffect(() => {
     async function initCameraKit() {
@@ -34,37 +50,44 @@ function App() {
 
       //console.log(lenses);
 
-      const session = await cameraKit.createSession({
+      // use existing canvas
+      let session;
+
+      session = await cameraKit.createSession({
         liveRenderTarget: canvasRef.current,
       });
+      sessionRef.current = session;
 
       push2Web.subscribe(AUTH_TOKEN, session, cameraKit.lensRepository);
 
       // PUSH2WEB
-      push2Web.events.addEventListener("error", (event) => {
-        console.error(event.detail);
-      });
+      // push2Web.events.addEventListener("error", (event) => {
+      //   console.error(event.detail);
+      // });
 
-      push2Web.events.addEventListener("lensReceived", async (event) => {
-        const { id } = event.detail;
+      // push2Web.events.addEventListener("lensReceived", async (event) => {
+      //   const { id } = event.detail;
 
-        const newLens = await cameraKitRef.current?.lensRepository.loadLens(
-          id,
-          LENS_GROUP_ID
-        );
-        await session.applyLens(newLens);
-      });
+      //   const newLens = await cameraKitRef.current?.lensRepository.loadLens(
+      //     id,
+      //     LENS_GROUP_ID
+      //   );
+      //   await session.applyLens(newLens);
+      // });
 
       sessionRef.current = session;
       session.events.addEventListener("error", (event) =>
         console.error(event.detail)
       );
       const mediaStream = await navigator.mediaDevices.getUserMedia({
-        video: true,
+        video: { facingMode: isBackFacing ? "environment" : "user" },
       });
+
+      mediaStreamRef.current = mediaStream;
+
       const source = createMediaStreamSource(mediaStream, {
         transform: Transform2D.MirrorX,
-        cameraType: "front",
+        cameraType: "back",
       });
       session.setSource(source);
       await session.applyLens(lenses[0]);
@@ -83,12 +106,14 @@ function App() {
   }, []);
 
   return (
-    <>
-      <div style={{ display: "flex", width: "100vw", height: "100vh" }}>
-        <canvas ref={canvasRef} />
-      </div>
-    </>
+    <div style={{ display: "flex", width: "100vw", height: "100vh" }}>
+      <button
+        onClick={updateCamera}
+        style={{ position: "absolute", top: "2rem", right: "2rem" }}
+      >
+        {isBackFacing ? "switch to front" : "switch to back"}
+      </button>
+      <canvas ref={canvasRef} />
+    </div>
   );
-}
-
-export default App;
+};
