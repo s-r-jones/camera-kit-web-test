@@ -14,11 +14,11 @@ const AUTH_TOKEN = "be39b419-c314-4879-906a-7b4b8284f8c0";
 //be39b419-c314-4879-906a-7b4b8284f8c0
 export const App = () => {
   console.log("Auth Token", AUTH_TOKEN);
-  const cameraKitRef = useRef<undefined | CameraKit>();
-  const canvasRef = useRef<undefined | HTMLCanvasElement>();
-  const sessionRef = useRef<undefined | CameraKitSession>();
+  const cameraKitRef = useRef<CameraKit>();
+  const canvasRef = useRef<HTMLCanvasElement>(null);
+  const sessionRef = useRef<CameraKitSession>();
 
-  const mediaStreamRef = useRef<undefined | MediaStream>();
+  const mediaStreamRef = useRef<MediaStream>();
 
   let isBackFacing = true;
 
@@ -67,7 +67,7 @@ export const App = () => {
       // use existing canvas
 
       const session = await cameraKit.createSession({
-        liveRenderTarget: canvasRef.current,
+        liveRenderTarget: canvasRef.current || undefined,
       });
       sessionRef.current = session;
 
@@ -125,8 +125,8 @@ export const App = () => {
       </button>
 
       <canvas
-        style={{ width: "100%", height: "100%" }}
         ref={canvasRef}
+        style={{ width: "100%", height: "100%" }}
       />
     </div>
   );
