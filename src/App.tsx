@@ -99,7 +99,6 @@ export const App = () => {
       mediaStreamRef.current = mediaStream;
 
       const source = createMediaStreamSource(mediaStream, {
-        transform: Transform2D.MirrorX,
         cameraType: "back",
       });
       await session.setSource(source);
@@ -117,7 +116,7 @@ export const App = () => {
   }, [canvasRef]);
 
   return (
-    <div style={{ display: "flex", width: "100vw", height: "100vh" }}>
+    <div style={{ width: "100%", height: "100%" }}>
       <button
         onClick={updateCamera}
         style={{ position: "absolute", top: "2rem", right: "2rem" }}
@@ -125,8 +124,10 @@ export const App = () => {
         {isBackFacing ? "switch to front" : "switch to back"}
       </button>
 
-      {/* @ts-ignore */}
-      <canvas ref={canvasRef} />
+      <canvas
+        style={{ width: "100%", height: "100%" }}
+        ref={canvasRef}
+      />
     </div>
   );
 };
