@@ -1,4 +1,4 @@
-import { useRef, useEffect } from "react";
+import { useRef, useEffect, useState } from "react";
 import {
   bootstrapCameraKit,
   Transform2D,
@@ -20,11 +20,11 @@ export const App = () => {
 
   const mediaStreamRef = useRef<MediaStream>();
 
-  let isBackFacing = true;
+  const [isBackFacing, setIsBackFacing] = useState(true);
 
   const updateCamera = async () => {
-    console.log("camera flip");
-    isBackFacing = !isBackFacing;
+    const isNowBackFacing = !isBackFacing;
+    setIsBackFacing(isNowBackFacing);
 
     if (mediaStreamRef.current) {
       sessionRef.current?.pause();
@@ -32,17 +32,17 @@ export const App = () => {
     }
 
     const mediaStream = await navigator.mediaDevices.getUserMedia({
-      video: { facingMode: isBackFacing ? "environment" : "user" },
+      video: { facingMode: isNowBackFacing ? "environment" : "user" },
     });
 
     mediaStreamRef.current = mediaStream;
 
     const source = createMediaStreamSource(mediaStream, {
-      cameraType: isBackFacing ? "back" : "front",
+      cameraType: isNowBackFacing ? "back" : "front",
     });
 
     await sessionRef.current?.setSource(source);
-    if (!isBackFacing) source.setTransform(Transform2D.MirrorX);
+    if (!isNowBackFacing) source.setTransform(Transform2D.MirrorX);
     sessionRef.current?.play();
   };
 
