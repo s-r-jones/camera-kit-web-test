@@ -41,7 +41,6 @@ const apiService: RemoteApiService = {
 };
 
 export const App = () => {
-  console.log("Auth Token", AUTH_TOKEN);
   const cameraKitRef = useRef<CameraKit>();
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const sessionRef = useRef<CameraKitSession>();
@@ -110,26 +109,26 @@ export const App = () => {
       });
       sessionRef.current = session;
 
+      // PUSH2WEB
       push2Web.subscribe(
-        "5ae46969-b95f-4e08-a10f-d655548ed767",
+        "be39b419-c314-4879-906a-7b4b8284f8c0",
         session,
         cameraKit.lensRepository
       );
 
-      // PUSH2WEB
-      // push2Web.events.addEventListener("error", (event) => {
-      //   console.error(event.detail);
-      // });
+      push2Web.events.addEventListener("error", (event) => {
+        console.error(event.detail);
+      });
 
-      // push2Web.events.addEventListener("lensReceived", async (event) => {
-      //   const { id } = event.detail;
+      push2Web.events.addEventListener("lensReceived", async (event) => {
+        const { id } = event.detail;
 
-      //   const newLens = await cameraKitRef.current?.lensRepository.loadLens(
-      //     id,
-      //     LENS_GROUP_ID
-      //   );
-      //   await session.applyLens(newLens);
-      // });
+        const newLens = await cameraKit.lensRepository.loadLens(
+          id,
+          LENS_GROUP_ID
+        );
+        await session.applyLens(newLens);
+      });
 
       sessionRef.current = session;
       session.events.addEventListener("error", (event) =>
