@@ -44,6 +44,7 @@ export const App = () => {
   const cameraKitRef = useRef<CameraKit>();
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const sessionRef = useRef<CameraKitSession>();
+  const push2WebRef = useRef<Push2Web>();
 
   const mediaStreamRef = useRef<MediaStream>();
 
@@ -71,6 +72,19 @@ export const App = () => {
     await sessionRef.current?.setSource(source);
     if (!isNowBackFacing) source.setTransform(Transform2D.MirrorX);
     sessionRef.current?.play();
+  };
+
+  const subscribeToPush2Web = async () => {
+    if (!push2WebRef.current || !cameraKitRef.current || !sessionRef.current) {
+      console.error("Push2Web or CameraKit or Session not initialized");
+      return;
+    }
+
+    push2WebRef.current?.subscribe(
+      "be39b419-c314-4879-906a-7b4b8284f8c0",
+      sessionRef.current,
+      cameraKitRef.current.lensRepository
+    );
   };
 
   useEffect(() => {
@@ -110,11 +124,11 @@ export const App = () => {
       sessionRef.current = session;
 
       // PUSH2WEB
-      push2Web.subscribe(
-        "be39b419-c314-4879-906a-7b4b8284f8c0",
-        session,
-        cameraKit.lensRepository
-      );
+      // push2Web.subscribe(
+      //   "be39b419-c314-4879-906a-7b4b8284f8c0",
+      //   session,
+      //   cameraKit.lensRepository
+      // );
 
       push2Web.events.addEventListener("error", (event) => {
         console.error(event.detail);
