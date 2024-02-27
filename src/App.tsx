@@ -11,6 +11,7 @@ import {
   remoteApiServicesFactory,
 } from "@snap/camera-kit";
 import { Push2Web } from "@snap/push2web";
+
 import "./App.css";
 
 const LENS_GROUP_ID = "542c15e5-1f57-450b-b0c6-f3f29df229aa";
@@ -49,6 +50,7 @@ export const App = () => {
   const mediaStreamRef = useRef<MediaStream>();
 
   const [isBackFacing, setIsBackFacing] = useState(true);
+  const [isInitialized, setIsInitialized] = useState(false);
 
   const updateCamera = async () => {
     const isNowBackFacing = !isBackFacing;
@@ -74,14 +76,19 @@ export const App = () => {
     sessionRef.current?.play();
   };
 
-  const subscribeToPush2Web = async () => {
+  const subscribeToPush2Web = async (token: string) => {
+    console.log("token", token);
+    console.log("push2WebRef.current", push2WebRef.current);
+    console.log("cameraKitRef.current", cameraKitRef.current);
+    console.log("sessionRef.current", sessionRef.current);
     if (!push2WebRef.current || !cameraKitRef.current || !sessionRef.current) {
       console.error("Push2Web or CameraKit or Session not initialized");
       return;
     }
 
     push2WebRef.current?.subscribe(
-      "be39b419-c314-4879-906a-7b4b8284f8c0",
+      //replace with key
+      token,
       sessionRef.current,
       cameraKitRef.current.lensRepository
     );
@@ -90,6 +97,7 @@ export const App = () => {
   useEffect(() => {
     async function initCameraKit() {
       const push2Web = new Push2Web();
+      push2WebRef.current = push2Web;
       const cameraKit = await bootstrapCameraKit(
         {
           apiToken:
@@ -124,12 +132,6 @@ export const App = () => {
       sessionRef.current = session;
 
       // PUSH2WEB
-      // push2Web.subscribe(
-      //   "be39b419-c314-4879-906a-7b4b8284f8c0",
-      //   session,
-      //   cameraKit.lensRepository
-      // );
-
       push2Web.events.addEventListener("error", (event) => {
         console.error(event.detail);
       });
@@ -160,6 +162,7 @@ export const App = () => {
       await session.setSource(source);
       await session.applyLens(lenses[0]);
       session.play();
+      setIsInitialized(true);
     }
 
     if (!cameraKitRef.current) {
@@ -170,6 +173,18 @@ export const App = () => {
       sessionRef.current?.pause();
     };
   }, [canvasRef]);
+
+  useEffect(() => {
+    //@ts-expect-error
+    if (window.snap.loginkit.getSharedDataAccessToken && isInitialized) {
+      //@ts-expect-error
+      const token = window.snap.loginkit.getSharedDataAccessToken();
+
+      subscribeToPush2Web(token);
+    }
+
+    //@ts-expect-error
+  }, [window?.snap?.loginkit, isInitialized]);
 
   return (
     <div style={{ width: "100%", height: "100%" }}>

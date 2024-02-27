@@ -33,15 +33,16 @@
             "user.external_id",
           ],
           handleResponseCallback: function (data) {
-            console.log(data);
-            // snap.loginkit.fetchUserInfo().then(
-            //   function (result) {
-            //     console.log(result);
-            //   },
-            //   function (err) {
-            //     console.log(err); // Error
-            //   }
-            // );
+            //console.log(data);
+            const { access_token } = data;
+            snap.loginkit.fetchUserInfo().then(
+              function (result) {
+                //console.log(result);
+              },
+              function (err) {
+                console.log(err); // Error
+              }
+            );
           },
         });
       };
