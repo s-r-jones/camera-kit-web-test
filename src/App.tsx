@@ -15,11 +15,9 @@ import { Push2Web } from "@snap/push2web";
 import "./App.css";
 
 const LENS_GROUP_ID = "542c15e5-1f57-450b-b0c6-f3f29df229aa";
-const AUTH_TOKEN = "be39b419-c314-4879-906a-7b4b8284f8c0";
-//be39b419-c314-4879-906a-7b4b8284f8c0
 
 const apiService: RemoteApiService = {
-  apiSpecId: "c2d89adb-e4df-436c-aded-9f9f002d43e4",
+  apiSpecId: "af9a7f93-3a8d-4cf4-85d2-4dcdb8789b3d",
   getRequestHandler(request) {
     console.log("Request", request);
 
@@ -84,10 +82,21 @@ export const App = () => {
       // Init CameraKit
       const cameraKit = await bootstrapCameraKit(
         {
+          logger: "console",
           apiToken:
             "eyJhbGciOiJIUzI1NiIsImtpZCI6IkNhbnZhc1MyU0hNQUNQcm9kIiwidHlwIjoiSldUIn0.eyJhdWQiOiJjYW52YXMtY2FudmFzYXBpIiwiaXNzIjoiY2FudmFzLXMyc3Rva2VuIiwibmJmIjoxNzA4NTQ0MTU3LCJzdWIiOiI3YjQwZWM4Ny1hNTk3LTQ0OTMtYjAyZi04YTFkOWVlYTNjZTN-U1RBR0lOR340ZGE0ZmUwYi05OTNmLTRkOGYtYjNiNC0yNjg3NjM2NjkxMzgifQ.BfK9vetSFkfUkL5_ueLB7xJv3S60SRfwIuISh_5F0V8",
         },
-        (container) => container.provides(push2Web.extension)
+        (container) => {
+          container.provides(push2Web.extension);
+          container.provides(
+            Injectable(
+              remoteApiServicesFactory.token,
+              [remoteApiServicesFactory.token] as const,
+              (existing: RemoteApiServices) => [...existing, apiService]
+            )
+          );
+          return container;
+        }
       );
       cameraKitRef.current = cameraKit;
 
