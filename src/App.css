@@ -40,3 +40,9 @@
 .read-the-docs {
   color: #888;
 }
+
+#login-btn {
+  position: absolute;
+  bottom: 1rem;
+  left: 40%;
+}

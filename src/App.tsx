@@ -1,4 +1,4 @@
-import { useRef, useEffect, useState } from "react";
+import { useRef, useEffect, useState, useCallback } from "react";
 import {
   bootstrapCameraKit,
   Transform2D,
@@ -76,45 +76,18 @@ export const App = () => {
     sessionRef.current?.play();
   };
 
-  const subscribeToPush2Web = async (token: string) => {
-    console.log("token", token);
-    console.log("push2WebRef.current", push2WebRef.current);
-    console.log("cameraKitRef.current", cameraKitRef.current);
-    console.log("sessionRef.current", sessionRef.current);
-    if (!push2WebRef.current || !cameraKitRef.current || !sessionRef.current) {
-      console.error("Push2Web or CameraKit or Session not initialized");
-      return;
-    }
-
-    push2WebRef.current?.subscribe(
-      //replace with key
-      token,
-      sessionRef.current,
-      cameraKitRef.current.lensRepository
-    );
-  };
-
   useEffect(() => {
     async function initCameraKit() {
+      // Init PUSH2WEB
       const push2Web = new Push2Web();
       push2WebRef.current = push2Web;
+      // Init CameraKit
       const cameraKit = await bootstrapCameraKit(
         {
           apiToken:
             "eyJhbGciOiJIUzI1NiIsImtpZCI6IkNhbnZhc1MyU0hNQUNQcm9kIiwidHlwIjoiSldUIn0.eyJhdWQiOiJjYW52YXMtY2FudmFzYXBpIiwiaXNzIjoiY2FudmFzLXMyc3Rva2VuIiwibmJmIjoxNzA4NTQ0MTU3LCJzdWIiOiI3YjQwZWM4Ny1hNTk3LTQ0OTMtYjAyZi04YTFkOWVlYTNjZTN-U1RBR0lOR340ZGE0ZmUwYi05OTNmLTRkOGYtYjNiNC0yNjg3NjM2NjkxMzgifQ.BfK9vetSFkfUkL5_ueLB7xJv3S60SRfwIuISh_5F0V8",
         },
-        (container) => {
-          container.provides(
-            Injectable(
-              remoteApiServicesFactory.token,
-              [remoteApiServicesFactory.token] as const,
-              (existing: RemoteApiServices) => [...existing, apiService]
-            )
-          );
-
-          container.provides(push2Web.extension);
-          return container;
-        }
+        (container) => container.provides(push2Web.extension)
       );
       cameraKitRef.current = cameraKit;
 
@@ -124,28 +97,10 @@ export const App = () => {
 
       //console.log(lenses);
 
-      // use existing canvas
-
+      // Init Session
       const session = await cameraKit.createSession({
         liveRenderTarget: canvasRef.current || undefined,
       });
-      sessionRef.current = session;
-
-      // PUSH2WEB
-      push2Web.events.addEventListener("error", (event) => {
-        console.error(event.detail);
-      });
-
-      push2Web.events.addEventListener("lensReceived", async (event) => {
-        const { id } = event.detail;
-
-        const newLens = await cameraKit.lensRepository.loadLens(
-          id,
-          LENS_GROUP_ID
-        );
-        await session.applyLens(newLens);
-      });
-
       sessionRef.current = session;
       session.events.addEventListener("error", (event) =>
         console.error(event.detail)
@@ -161,6 +116,28 @@ export const App = () => {
       });
       await session.setSource(source);
       await session.applyLens(lenses[0]);
+
+      //Config Push2Web
+      window.addEventListener("loginkit_token", (event: Event) => {
+        const tokenEvent = event as CustomEvent<string>;
+        const token = tokenEvent.detail;
+        console.log("token recieved", token);
+
+        push2Web.subscribe(token, session, cameraKit.lensRepository);
+        push2Web.events.addEventListener("error", (event) => {
+          console.error(event.detail);
+        });
+        push2Web.events.addEventListener("lensReceived", async (event) => {
+          const { id } = event.detail;
+
+          const newLens = await cameraKit.lensRepository.loadLens(
+            id,
+            LENS_GROUP_ID
+          );
+          await session.applyLens(newLens);
+        });
+      });
+
       session.play();
       setIsInitialized(true);
     }
@@ -172,19 +149,7 @@ export const App = () => {
     return () => {
       sessionRef.current?.pause();
     };
-  }, [canvasRef]);
-
-  useEffect(() => {
-    //@ts-expect-error
-    if (window.snap.loginkit.getSharedDataAccessToken && isInitialized) {
-      //@ts-expect-error
-      const token = window.snap.loginkit.getSharedDataAccessToken();
-
-      subscribeToPush2Web(token);
-    }
-
-    //@ts-expect-error
-  }, [window?.snap?.loginkit, isInitialized]);
+  }, []);
 
   return (
     <div style={{ width: "100%", height: "100%" }}>
