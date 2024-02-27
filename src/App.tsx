@@ -121,6 +121,7 @@ export const App = () => {
       window.addEventListener("loginkit_token", (event: Event) => {
         const tokenEvent = event as CustomEvent<string>;
         const token = tokenEvent.detail;
+
         console.log("token recieved", token);
 
         push2Web.subscribe(token, session, cameraKit.lensRepository);
