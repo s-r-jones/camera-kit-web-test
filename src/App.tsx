@@ -80,23 +80,19 @@ export const App = () => {
       const push2Web = new Push2Web();
       push2WebRef.current = push2Web;
       // Init CameraKit
+      //@ts-ignore
+      const apiServiceInjectable = Injectable(
+        remoteApiServicesFactory.token,
+        [remoteApiServicesFactory.token] as const,
+        (existing: RemoteApiServices) => [...existing, apiServiceInjectable]
+      );
       const cameraKit = await bootstrapCameraKit(
         {
           logger: "console",
           apiToken:
             "eyJhbGciOiJIUzI1NiIsImtpZCI6IkNhbnZhc1MyU0hNQUNQcm9kIiwidHlwIjoiSldUIn0.eyJhdWQiOiJjYW52YXMtY2FudmFzYXBpIiwiaXNzIjoiY2FudmFzLXMyc3Rva2VuIiwibmJmIjoxNzA4NTQ0MTU3LCJzdWIiOiI3YjQwZWM4Ny1hNTk3LTQ0OTMtYjAyZi04YTFkOWVlYTNjZTN-U1RBR0lOR340ZGE0ZmUwYi05OTNmLTRkOGYtYjNiNC0yNjg3NjM2NjkxMzgifQ.BfK9vetSFkfUkL5_ueLB7xJv3S60SRfwIuISh_5F0V8",
         },
-        (container) => {
-          container.provides(push2Web.extension);
-          container.provides(
-            Injectable(
-              remoteApiServicesFactory.token,
-              [remoteApiServicesFactory.token] as const,
-              (existing: RemoteApiServices) => [...existing, apiService]
-            )
-          );
-          return container;
-        }
+        (container) => container.provides(apiServiceInjectable)
       );
       cameraKitRef.current = cameraKit;
 
