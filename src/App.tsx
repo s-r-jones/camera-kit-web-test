@@ -84,7 +84,7 @@ export const App = () => {
       const apiServiceInjectable = Injectable(
         remoteApiServicesFactory.token,
         [remoteApiServicesFactory.token] as const,
-        (existing: RemoteApiServices) => [...existing, apiServiceInjectable]
+        (existing: RemoteApiServices) => [...existing, apiService]
       );
       const cameraKit = await bootstrapCameraKit(
         {
